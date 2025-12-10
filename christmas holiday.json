@@ -1,0 +1,638 @@
+{
+  "name": "custom message",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.body.sheetUrl }}",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        464,
+        -192
+      ],
+      "id": "803482a7-3a46-4de1-a9f0-0f572e129dde",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.dataSource }}",
+                    "rightValue": "sheets",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "eec32426-2d3d-4be8-a3db-1656e0419fe7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sheets"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "15c4a7c4-538d-4deb-af6b-51b67efacf8a",
+                    "leftValue": "={{ $json.body.dataSource }}",
+                    "rightValue": "csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "csv"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "3237774c-b935-4367-a6c7-4991db2e3679",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/holiday-submit",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f0c86b69-6d19-451d-9a3c-f3970f0c205a",
+      "name": "Webhook",
+      "webhookId": "77d416df-55b0-475b-bd4d-b90bd4dcc511"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        896,
+        -32
+      ],
+      "id": "f5738830-f7b6-453b-a211-23fc62221e1f",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "resume": "specificTime",
+        "dateTime": "={{ $('Webhook').item.json.body.scheduleTime }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        -192
+      ],
+      "id": "42e2e25e-f892-4293-b63b-93abe7c2b76d",
+      "name": "Wait",
+      "webhookId": "b68c3cd9-ee0a-4097-84a9-a9be7e8e42e8"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1520,
+        -32
+      ],
+      "id": "630953dc-eec5-41fd-ae53-7516b307a151",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2176,
+        -32
+      ],
+      "id": "134cf898-497f-4222-b278-c80d4a57408a",
+      "name": "Wait1",
+      "webhookId": "f68c6abe-5ae1-405b-8a32-192e82312f25"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.toolhouse.ai/v1/agent-runs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_TOOLHOUSE_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"YOUR_TOOLHOUSE_CHAT_ID\",\n  \"vars\": {\n    \"name\": \"{{ $json.name }}\",\n    \"email\": \"{{ $json.email }}\",\n    \"company\": \"{{ $json.company }}\",\n    \"purchase_history\": \"{{ $json.purchase_history }}\",\n    \"tone\": \"{{ $('Webhook').item.json.body.tone }}\",\n    \"offer\": \"{{ $json.offer || 'none' }}\"\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1968,
+        -32
+      ],
+      "id": "101a3205-c3dd-4f1b-8625-3b08b6a18f15",
+      "name": "Generate Personalized Email - Toolhouse"
+    },
+    {
+      "parameters": {
+        "path": "holiday-ui",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -176,
+        256
+      ],
+      "id": "9ac9bacb-a5d7-41a6-bee4-47c632839773",
+      "name": "Webhook1",
+      "webhookId": "efe1953c-22fa-4a25-ab27-f500c8907e92"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Holiday Email Atelier</title>\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <style>\n    * { box-sizing: border-box; margin: 0; padding: 0; }\n    body {\n      font-family: system-ui, -apple-system, BlinkMacSystemFont, \"SF Pro Text\", sans-serif;\n      background: linear-gradient(135deg, #1a472a 0%, #2d5f3f 25%, #1e3a2e 50%, #0f2419 100%);\n      color: #f9fafb;\n      min-height: 100vh;\n      display: flex;\n      justify-content: center;\n      align-items: flex-start;\n      padding: 32px 16px;\n      position: relative;\n      overflow-x: hidden;\n    }\n    \n    /* Animated snowflakes */\n    .snowflake {\n      position: fixed;\n      top: -10px;\n      color: rgba(255, 255, 255, 0.8);\n      font-size: 20px;\n      pointer-events: none;\n      animation: fall linear infinite;\n      z-index: 0;\n    }\n    @keyframes fall {\n      to { transform: translateY(100vh) rotate(360deg); }\n    }\n    \n    /* Christmas trees decoration */\n    .tree-left, .tree-right {\n      position: fixed;\n      bottom: 0;\n      font-size: 80px;\n      opacity: 0.15;\n      z-index: 0;\n      pointer-events: none;\n    }\n    .tree-left { left: 20px; }\n    .tree-right { right: 20px; }\n    \n    /* Santa and chimney */\n    .santa {\n      position: fixed;\n      top: 60px;\n      right: 60px;\n      font-size: 70px;\n      opacity: 0.2;\n      z-index: 0;\n      pointer-events: none;\n      animation: santa-wave 3s ease-in-out infinite;\n    }\n    @keyframes santa-wave {\n      0%, 100% { transform: rotate(-5deg); }\n      50% { transform: rotate(5deg); }\n    }\n    \n    /* Stockings */\n    .stockings {\n      position: fixed;\n      bottom: 20px;\n      left: 50%;\n      transform: translateX(-50%);\n      font-size: 50px;\n      opacity: 0.18;\n      z-index: 0;\n      pointer-events: none;\n      display: flex;\n      gap: 15px;\n    }\n    \n    /* Chimney decoration */\n    .chimney {\n      position: fixed;\n      top: 80px;\n      left: 40px;\n      opacity: 0.15;\n      z-index: 0;\n      pointer-events: none;\n    }\n    .chimney-brick {\n      width: 60px;\n      height: 80px;\n      background: linear-gradient(135deg, #7c2d12 0%, #991b1b 50%, #7c2d12 100%);\n      border-radius: 8px 8px 0 0;\n      position: relative;\n      box-shadow: inset 0 0 20px rgba(0,0,0,0.3);\n    }\n    .chimney-smoke {\n      position: absolute;\n      top: -30px;\n      left: 15px;\n      font-size: 40px;\n      opacity: 0.6;\n      animation: smoke-rise 4s ease-in-out infinite;\n    }\n    @keyframes smoke-rise {\n      0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }\n      50% { transform: translateY(-15px) scale(1.2); opacity: 0.3; }\n    }\n    \n    .shell {\n      max-width: 960px;\n      width: 100%;\n      background: rgba(255, 255, 255, 0.98);\n      border-radius: 24px;\n      padding: 32px 28px 32px;\n      box-shadow: 0 18px 60px rgba(0,0,0,0.4), 0 0 80px rgba(220, 38, 38, 0.2);\n      border: 1px solid rgba(239, 68, 68, 0.3);\n      position: relative;\n      z-index: 1;\n    }\n    \n    /* Decorative snowman corner */\n    .shell::before {\n      content: \"\u26c4\";\n      position: absolute;\n      top: -15px;\n      right: 20px;\n      font-size: 48px;\n      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));\n    }\n    \n    /* Holly decoration */\n    .shell::after {\n      content: \"\ud83c\udf84\";\n      position: absolute;\n      top: -12px;\n      left: 24px;\n      font-size: 42px;\n      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));\n    }\n    \n    .header {\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      border-bottom: 2px solid #dc2626;\n      padding-bottom: 20px;\n      margin-bottom: 24px;\n      position: relative;\n      z-index: 1;\n    }\n    .label {\n      letter-spacing: 0.22em;\n      text-transform: uppercase;\n      font-size: 11px;\n      color: #dc2626;\n      font-weight: 600;\n    }\n    .title {\n      margin-top: 8px;\n      font-size: 28px;\n      font-weight: 500;\n      font-family: \"Georgia\", \"Times New Roman\", serif;\n      color: #15803d;\n    }\n    .tagline {\n      font-size: 12px;\n      color: #6b7280;\n      margin-top: 6px;\n    }\n    .wreath {\n      width: 64px;\n      height: 64px;\n      border-radius: 999px;\n      border: 2px solid #dc2626;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 50%, #fecaca 100%);\n      box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);\n      font-size: 32px;\n    }\n    .subtitle {\n      font-size: 13px;\n      color: #374151;\n      margin-bottom: 20px;\n      position: relative;\n      z-index: 1;\n    }\n    .two-col {\n      display: grid;\n      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);\n      gap: 24px;\n      position: relative;\n      z-index: 1;\n    }\n    @media (max-width: 840px) {\n      .two-col { grid-template-columns: minmax(0, 1fr); }\n    }\n    .card {\n      background: #ffffff;\n      border-radius: 18px;\n      padding: 20px 18px;\n      border: 2px solid #fee2e2;\n      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);\n    }\n    .section-title {\n      font-size: 11px;\n      text-transform: uppercase;\n      letter-spacing: 0.18em;\n      color: #dc2626;\n      margin-bottom: 10px;\n      font-weight: 600;\n    }\n    .section-main {\n      font-size: 17px;\n      font-weight: 500;\n      margin-bottom: 18px;\n      color: #15803d;\n    }\n    .accent { color: #dc2626; }\n    .field { margin-bottom: 16px; }\n    label {\n      display: block;\n      font-size: 13px;\n      font-weight: 500;\n      margin-bottom: 6px;\n      color: #1f2937;\n    }\n    input, select, textarea {\n      width: 100%;\n      padding: 11px 12px;\n      border-radius: 999px;\n      border: 1px solid #d1d5db;\n      font-size: 13px;\n      background: #f9fafb;\n      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;\n      font-family: inherit;\n      color: #111827;\n    }\n    textarea {\n      border-radius: 14px;\n      min-height: 72px;\n      resize: vertical;\n    }\n    input:focus, select:focus, textarea:focus {\n      outline: none;\n      border-color: #dc2626;\n      background: #ffffff;\n      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);\n    }\n    .hint {\n      font-size: 11px;\n      color: #9ca3af;\n      margin-top: 4px;\n    }\n    .tabs {\n      display: inline-flex;\n      background: #fee2e2;\n      border-radius: 999px;\n      padding: 4px;\n      margin-bottom: 18px;\n      gap: 4px;\n    }\n    .tab-btn {\n      border: none;\n      padding: 7px 14px;\n      border-radius: 999px;\n      background: transparent;\n      font-size: 12px;\n      cursor: pointer;\n      color: #991b1b;\n      display: inline-flex;\n      align-items: center;\n      gap: 6px;\n      transition: background 0.15s, color 0.15s;\n    }\n    .tab-btn.active {\n      background: #dc2626;\n      color: #ffffff;\n      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);\n    }\n    .file-box {\n      border-radius: 16px;\n      border: 2px dashed #fca5a5;\n      padding: 26px 18px;\n      text-align: center;\n      cursor: pointer;\n      background: #fef2f2;\n      transition: background 0.15s, border-color 0.15s;\n      font-size: 13px;\n      color: #991b1b;\n    }\n    .file-box:hover {\n      border-color: #dc2626;\n      background: #fee2e2;\n    }\n    .file-label {\n      margin-top: 8px;\n      font-size: 12px;\n      color: #9ca3af;\n    }\n    .file-name {\n      margin-top: 10px;\n      font-size: 12px;\n      color: #15803d;\n      font-weight: 500;\n    }\n    .preview-list {\n      margin-top: 10px;\n      background: #f9fafb;\n      border-radius: 10px;\n      padding: 8px 10px;\n      max-height: 120px;\n      overflow-y: auto;\n      font-size: 12px;\n      color: #4b5563;\n    }\n    .preview-item {\n      padding: 4px 0;\n      border-bottom: 1px solid #e5e7eb;\n    }\n    .preview-item:last-child { border-bottom: none; }\n    .summary-row {\n      display: flex;\n      justify-content: space-between;\n      align-items: baseline;\n      margin-bottom: 10px;\n    }\n    .summary-label {\n      font-size: 11px;\n      letter-spacing: 0.14em;\n      text-transform: uppercase;\n      color: #dc2626;\n      font-weight: 600;\n    }\n    .summary-value {\n      font-size: 15px;\n      font-weight: 500;\n      color: #15803d;\n    }\n    .pill {\n      display: inline-flex;\n      align-items: center;\n      padding: 4px 10px;\n      border-radius: 999px;\n      font-size: 11px;\n      border: 1px solid #fca5a5;\n      gap: 6px;\n      background: #fef2f2;\n    }\n    .pill-dot {\n      width: 6px;\n      height: 6px;\n      border-radius: 999px;\n      background: #dc2626;\n    }\n    .alert {\n      margin-top: 10px;\n      padding: 8px 10px;\n      border-radius: 10px;\n      font-size: 12px;\n    }\n    .alert-ok {\n      background: #d1fae5;\n      color: #065f46;\n      border: 1px solid #6ee7b7;\n    }\n    .alert-err {\n      background: #fee2e2;\n      color: #991b1b;\n      border: 1px solid #fca5a5;\n    }\n    .submit-row { margin-top: 18px; }\n    .btn {\n      width: 100%;\n      border-radius: 999px;\n      border: none;\n      padding: 13px 18px;\n      font-size: 14px;\n      font-weight: 600;\n      cursor: pointer;\n      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);\n      color: #fef2f2;\n      display: inline-flex;\n      align-items: center;\n      justify-content: center;\n      gap: 8px;\n      transition: transform 0.15s, box-shadow 0.15s;\n      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);\n    }\n    .btn:hover {\n      transform: translateY(-2px);\n      box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);\n    }\n    .btn:disabled {\n      opacity: 0.6;\n      cursor: default;\n      box-shadow: none;\n      transform: none;\n    }\n    .spinner {\n      width: 14px;\n      height: 14px;\n      border-radius: 999px;\n      border: 2px solid rgba(254, 242, 242, 0.5);\n      border-top-color: #fef2f2;\n      animation: spin 0.7s linear infinite;\n    }\n    @keyframes spin {\n      to { transform: rotate(360deg); }\n    }\n    .footer {\n      margin-top: 18px;\n      text-align: right;\n      font-size: 11px;\n      color: #6b7280;\n    }\n    .footer span {\n      font-weight: 600;\n      color: #dc2626;\n    }\n  </style>\n</head>\n<body>\n  <!-- Animated snowflakes -->\n  <div class=\"snowflake\" style=\"left: 10%; animation-duration: 10s; animation-delay: 0s;\">\u2744</div>\n  <div class=\"snowflake\" style=\"left: 20%; animation-duration: 12s; animation-delay: 2s;\">\u2745</div>\n  <div class=\"snowflake\" style=\"left: 30%; animation-duration: 8s; animation-delay: 4s;\">\u2744</div>\n  <div class=\"snowflake\" style=\"left: 40%; animation-duration: 14s; animation-delay: 1s;\">\u2745</div>\n  <div class=\"snowflake\" style=\"left: 50%; animation-duration: 11s; animation-delay: 3s;\">\u2744</div>\n  <div class=\"snowflake\" style=\"left: 60%; animation-duration: 9s; animation-delay: 5s;\">\u2745</div>\n  <div class=\"snowflake\" style=\"left: 70%; animation-duration: 13s; animation-delay: 2s;\">\u2744</div>\n  <div class=\"snowflake\" style=\"left: 80%; animation-duration: 10s; animation-delay: 4s;\">\u2745</div>\n  <div class=\"snowflake\" style=\"left: 90%; animation-duration: 12s; animation-delay: 1s;\">\u2744</div>\n\n  <!-- Christmas trees -->\n  <div class=\"tree-left\">\ud83c\udf32</div>\n  <div class=\"tree-right\">\ud83c\udf84</div>\n\n  <!-- Santa -->\n  <div class=\"santa\">\ud83c\udf85</div>\n\n  <!-- Chimney with smoke -->\n  <div class=\"chimney\">\n    <div class=\"chimney-smoke\">\ud83d\udca8</div>\n    <div class=\"chimney-brick\"></div>\n  </div>\n\n  <!-- Stockings -->\n  <div class=\"stockings\">\n    <span>\ud83e\udde6</span>\n    <span>\ud83e\udde6</span>\n    <span>\ud83e\udde6</span>\n  </div>\n\n  <div class=\"shell\">\n    <div class=\"header\">\n      <div>\n        <div class=\"label\">\ud83c\udf84 Holiday Studio</div>\n        <div class=\"title\">Seasonal Email Atelier</div>\n        <div class=\"tagline\">A thoughtful holiday greeting campaign for your community.</div>\n      </div>\n      <div class=\"wreath\">\ud83c\udf85</div>\n    </div>\n\n    <div class=\"subtitle\">\n      Upload a list, set your preferences, and let your agents compose heartfelt holiday messages from YourCompany.\n    </div>\n\n    <div class=\"two-col\">\n      <!-- Left: form -->\n      <div class=\"card\">\n        <div class=\"section-title\">\ud83c\udf81 Audience & Settings</div>\n        <div class=\"section-main\">\n          Choose your list source and campaign details.\n        </div>\n\n        <div class=\"tabs\">\n          <button type=\"button\" class=\"tab-btn active\" data-tab=\"csv\">\ud83d\udcc4 CSV</button>\n          <button type=\"button\" class=\"tab-btn\" data-tab=\"sheets\">\ud83d\udcca Google Sheets</button>\n        </div>\n\n        <!-- CSV pane -->\n        <div id=\"pane-csv\">\n          <div class=\"field\">\n            <div class=\"file-box\" onclick=\"document.getElementById('csvFile').click()\">\n              \ud83c\udf81 Drop a CSV here or click to browse\n              <div class=\"file-label\">Columns: name, email, company, purchase_history</div>\n              <input type=\"file\" id=\"csvFile\" accept=\".csv\" style=\"display:none\" onchange=\"handleCSV(this)\">\n              <div id=\"fileName\" class=\"file-name\"></div>\n            </div>\n          </div>\n          <div id=\"csvPreview\" style=\"display:none;\">\n            <div class=\"field\">\n              <label>Preview (deduplicated)</label>\n              <div class=\"preview-list\" id=\"csvPreviewList\"></div>\n            </div>\n          </div>\n        </div>\n\n        <!-- Sheets pane -->\n        <div id=\"pane-sheets\" style=\"display:none;\">\n          <div class=\"field\">\n            <label>Google Sheet URL</label>\n            <input type=\"url\" id=\"sheetUrl\" placeholder=\"https://docs.google.com/spreadsheets/d/\u2026\">\n            <div class=\"hint\">Share as \"Anyone with the link can view\". Use tab named \"Contacts\".</div>\n          </div>\n        </div>\n\n        <div class=\"field\" style=\"margin-top:12px;\">\n          <label>Campaign name</label>\n          <input type=\"text\" id=\"campaignName\" value=\"Holiday Capsule 2025\">\n        </div>\n\n        <div class=\"field\">\n          <label>Sender name</label>\n          <input type=\"text\" id=\"senderName\" placeholder=\"Your email address\">\n        </div>\n\n        <div class=\"field\">\n          <label>Voice</label>\n          <select id=\"tone\">\n            <option value=\"warm\">Warm & sincere</option>\n            <option value=\"festive\">Softly festive</option>\n            <option value=\"professional\">Refined & professional</option>\n            <option value=\"casual\">Relaxed & friendly</option>\n          </select>\n        </div>\n\n        <div class=\"field\">\n          <label>Holiday offer (optional)</label>\n          <textarea id=\"offer\" placeholder=\"e.g. 20% off selected items until Dec 31 (leave empty for pure greeting).\"></textarea>\n        </div>\n\n        <div class=\"field\">\n          <label>Schedule (optional)</label>\n          <input type=\"datetime-local\" id=\"scheduleTime\">\n          <div class=\"hint\">\n            Leave empty to send immediately. Set a time to schedule delivery.\n          </div>\n        </div>\n\n        <div id=\"formAlert\"></div>\n\n        <div class=\"submit-row\">\n          <button type=\"button\" class=\"btn\" id=\"submitBtn\" onclick=\"submitForm()\">\n            <span>\ud83c\udf84 Send Holiday Campaign</span>\n          </button>\n        </div>\n\n        <div class=\"footer\">\n          Powered by <span>YourCompany</span> \u00d7 <span>Toolhouse</span> \u00d7 <span>n8n</span>\n        </div>\n      </div>\n\n      <!-- Right: Personalization Preview -->\n      <div class=\"card\">\n        <div class=\"section-title\">\u2728 Personalization Preview</div>\n        <div class=\"section-main\">\n          See how your message adapts to each contact.\n        </div>\n\n        <!-- Sample Contact Selector -->\n        <div style=\"margin-bottom: 16px;\">\n          <label style=\"font-size: 11px; color: #991b1b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; display: block;\">Preview as:</label>\n          <select id=\"previewContact\" onchange=\"updatePreview()\" style=\"width: 100%; padding: 9px 12px; border-radius: 999px; border: 1px solid #fca5a5; font-size: 12px; background: #fef2f2; color: #991b1b; font-weight: 500;\">\n            <option value=\"vip\">Sarah Chen - VIP Customer</option>\n            <option value=\"new\">Michael Ross - New Customer</option>\n            <option value=\"returning\">Emma Davis - Returning Buyer</option>\n            <option value=\"inactive\">James Wilson - Inactive (6mo)</option>\n          </select>\n        </div>\n\n        <!-- Live Email Preview Card -->\n        <div style=\"background: #ffffff; border-radius: 12px; padding: 18px; border: 2px solid #fee2e2; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08); min-height: 240px;\">\n          \n          <div style=\"font-size: 10px; color: #9ca3af; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.12em;\">Subject</div>\n          <div id=\"previewSubject\" style=\"font-size: 13px; font-weight: 600; color: #15803d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #fee2e2;\">\n            \ud83c\udf84 Holiday Wishes from YourCompany, Sarah!\n          </div>\n\n          <div id=\"previewBody\" style=\"font-size: 12px; line-height: 1.7; color: #374151;\">\n            <p style=\"margin-bottom: 10px;\"><strong>Dear Sarah,</strong></p>\n            <p style=\"margin-bottom: 10px;\">\n              As one of our most valued customers, we wanted to take a moment to say thank you for your incredible support throughout 2025.\n            </p>\n            <p style=\"margin-bottom: 10px;\">\n              Wishing you and your loved ones a magical holiday season filled with warmth and joy! \ud83c\udf81\n            </p>\n            <p style=\"margin-bottom: 0; font-size: 11px; color: #6b7280; font-style: italic;\">\n              P.S. Watch your inbox for an exclusive New Year surprise!\n            </p>\n          </div>\n        </div>\n\n        <!-- Personalization Stats -->\n        <div style=\"margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;\">\n          <div style=\"background: #fef2f2; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #fee2e2;\">\n            <div style=\"font-size: 20px; font-weight: 600; color: #dc2626;\" id=\"previewNameCount\">5</div>\n            <div style=\"font-size: 10px; color: #991b1b; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.08em;\">Name tags</div>\n          </div>\n          <div style=\"background: #fef2f2; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #fee2e2;\">\n            <div style=\"font-size: 20px; font-weight: 600; color: #15803d;\" id=\"previewVariants\">4</div>\n            <div style=\"font-size: 10px; color: #991b1b; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.08em;\">Variants</div>\n          </div>\n        </div>\n\n        <!-- Summary Stats -->\n        <div style=\"margin-top: 20px; padding-top: 16px; border-top: 2px solid #fee2e2;\">\n          <div class=\"summary-row\">\n            <div class=\"summary-label\">Total Contacts</div>\n            <div class=\"summary-value\" id=\"summaryContacts\">0</div>\n          </div>\n          <div class=\"summary-row\">\n            <div class=\"summary-label\">Status</div>\n            <div class=\"summary-value\">\n              <span class=\"pill\" id=\"summaryPill\">\n                <span class=\"pill-dot\"></span> Ready\n              </span>\n            </div>\n          </div>\n        </div>\n\n        <div id=\"summaryAlert\" style=\"margin-top:12px;\"></div>\n      </div>\n    </div>\n  </div>\n\n  <script>\n    const CONFIG = {\n      backendUrl: 'https://your-n8n-instance.com/webhook',\n      toolhouseChatId: 'YOUR_TOOLHOUSE_CHAT_ID'\n    };\n\n    let dataSource = 'csv';\n    let contacts = [];\n\n    const tabs = document.querySelectorAll('.tab-btn');\n    const paneCsv = document.getElementById('pane-csv');\n    const paneSheets = document.getElementById('pane-sheets');\n    const scheduleInput = document.getElementById('scheduleTime');\n\n    tabs.forEach(btn => {\n      btn.addEventListener('click', () => {\n        tabs.forEach(b => b.classList.remove('active'));\n        btn.classList.add('active');\n        const tab = btn.dataset.tab;\n        dataSource = tab;\n        paneCsv.style.display = tab === 'csv' ? 'block' : 'none';\n        paneSheets.style.display = tab === 'sheets' ? 'block' : 'none';\n        document.getElementById('summarySource').textContent =\n          tab === 'csv' ? 'CSV' : 'Google Sheets';\n      });\n    });\n\n    scheduleInput.addEventListener('change', () => {\n      const raw = scheduleInput.value;\n      const el = document.getElementById('summaryTiming');\n      if (!raw) { el.textContent = 'Immediate dispatch'; return; }\n      const d = new Date(raw);\n      el.textContent = d.toLocaleString('en-US', {\n        month: 'short',\n        day: 'numeric',\n        hour: '2-digit',\n        minute: '2-digit'\n      });\n    });\n\n    function handleCSV(input) {\n      const file = input.files[0];\n      if (!file) return;\n\n      const reader = new FileReader();\n      reader.onload = (e) => {\n        const text = e.target.result;\n        const lines = text.split('\\n').filter(r => r.trim()).slice(1);\n\n        const seen = new Set();\n        const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n        let duplicates = 0;\n\n        contacts = lines.map(line => {\n          const cols = line.split(',').map(c => c.trim().replace(/^\"|\"$/g, ''));\n          return {\n            name: cols[0],\n            email: cols[1]?.toLowerCase(),\n            company: cols[2] || 'N/A',\n            purchase_history: cols[3] || 'New customer'\n          };\n        }).filter(c => {\n          if (!c.email || !emailRegex.test(c.email)) return false;\n          if (seen.has(c.email)) { duplicates++; return false; }\n          seen.add(c.email);\n          return true;\n        });\n\n        document.getElementById('fileName').textContent =\n          file.name + ' \u00b7 ' + contacts.length + ' recipient(s)';\n        document.getElementById('summaryContacts').textContent = contacts.length;\n\n        const list = document.getElementById('csvPreviewList');\n        list.innerHTML = contacts.slice(0,5).map(c =>\n          `<div class=\"preview-item\">${c.name || 'Unnamed'} \u00b7 ${c.email}</div>`\n        ).join('') + (contacts.length > 5\n          ? `<div class=\"preview-item\">+ ${contacts.length - 5} more\u2026</div>` : '');\n\n        document.getElementById('csvPreview').style.display =\n          contacts.length ? 'block' : 'none';\n\n        setFormAlert(\n          contacts.length\n            ? `\u2713 Loaded ${contacts.length} unique contacts${duplicates ? ` \u00b7 removed ${duplicates} duplicates` : ''}.`\n            : 'No valid emails found in this file.',\n          contacts.length ? 'ok' : 'err'\n        );\n      };\n      reader.readAsText(file);\n    }\n\n    function setFormAlert(msg, type) {\n      const box = document.getElementById('formAlert');\n      if (!msg) { box.innerHTML = ''; return; }\n      box.innerHTML =\n        `<div class=\"alert ${type === 'ok' ? 'alert-ok' : 'alert-err'}\">${msg}</div>`;\n    }\n\n    function setSummaryAlert(msg, type) {\n      const box = document.getElementById('summaryAlert');\n      if (!msg) { box.innerHTML = ''; return; }\n      box.innerHTML =\n        `<div class=\"alert ${type === 'ok' ? 'alert-ok' : 'alert-err'}\">${msg}</div>`;\n    }\n\n    async function submitForm() {\n      const btn = document.getElementById('submitBtn');\n      const name = document.getElementById('campaignName').value.trim();\n      const sender = document.getElementById('senderName').value.trim();\n      const tone = document.getElementById('tone').value;\n      const offer = document.getElementById('offer').value.trim();\n      const sheetUrl = document.getElementById('sheetUrl').value.trim();\n      const rawSchedule = scheduleInput.value;\n\n      setFormAlert('', 'ok');\n      setSummaryAlert('', 'ok');\n\n      if (!name || !sender) {\n        setFormAlert('Please add a campaign name and sender email.', 'err');\n        return;\n      }\n      if (dataSource === 'csv' && contacts.length === 0) {\n        setFormAlert('Please upload a CSV with at least one valid email.', 'err');\n        return;\n      }\n      if (dataSource === 'sheets' && !sheetUrl) {\n        setFormAlert('Please provide a Google Sheet URL.', 'err');\n        return;\n      }\n\n      const scheduleTime = rawSchedule ? new Date(rawSchedule).toISOString() : null;\n\n      const payload = {\n        dataSource,\n        contacts: dataSource === 'csv' ? contacts : [],\n        sheetUrl: dataSource === 'sheets' ? sheetUrl : '',\n        campaignName: name,\n        tone,\n        senderName: sender,\n        scheduleTime,\n        offer,\n        toolhouseChatId: CONFIG.toolhouseChatId\n      };\n\n      btn.disabled = true;\n      btn.innerHTML = '<span class=\"spinner\"></span> Preparing campaign\u2026';\n\n      try {\n        const res = await fetch(CONFIG.backendUrl, {\n          method: 'POST',\n          headers: { 'Content-Type': 'application/json' },\n          body: JSON.stringify(payload)\n        });\n\n        if (!res.ok) throw new Error('Workflow responded with ' + res.status);\n\n        setFormAlert('\ud83c\udf84 Campaign sent to automation successfully!', 'ok');\n        setSummaryAlert(\n          scheduleTime\n            ? '\u2713 Messages queued and will send at the scheduled time.'\n            : '\u2713 Messages are being sent now.',\n          'ok'\n        );\n        document.getElementById('summaryPill').innerHTML =\n          '<span class=\"pill-dot\"></span> Sent';\n      } catch (e) {\n        setFormAlert('Could not reach the workflow. Check that the webhook is active.', 'err');\n        setSummaryAlert(e.message, 'err');\n        document.getElementById('summaryPill').innerHTML =\n          '<span class=\"pill-dot\"></span> Error';\n      } finally {\n        btn.disabled = false;\n        btn.innerHTML = '\ud83c\udf84 Send Holiday Campaign';\n      }\n    }\n\n    // Personalization Preview Data\n    const previewData = {\n      vip: {\n        name: 'Sarah',\n        subject: '\ud83c\udf84 Holiday Wishes from YourCompany, Sarah!',\n        greeting: 'Dear Sarah,',\n        body: 'As one of our most valued customers, we wanted to take a moment to say thank you for your incredible support throughout 2025.',\n        closing: 'Wishing you and your loved ones a magical holiday season filled with warmth and joy! \ud83c\udf81',\n        ps: 'P.S. Watch your inbox for an exclusive New Year surprise!'\n      },\n      new: {\n        name: 'Michael',\n        subject: '\ud83c\udf85 Welcome to the YourCompany Family, Michael!',\n        greeting: 'Hi Michael,',\n        body: 'We\\'re thrilled to have you join us this holiday season! As a warm welcome, we wanted to share our heartfelt gratitude for choosing YourCompany.',\n        closing: 'Here\\'s to a wonderful holiday and an amazing year ahead! \u2744\ufe0f',\n        ps: 'P.S. Check out our New Year collection - perfect for fresh starts!'\n      },\n      returning: {\n        name: 'Emma',\n        subject: '\ud83c\udf81 Great to See You Again, Emma!',\n        greeting: 'Hey Emma,',\n        body: 'It\\'s wonderful to have you back! Your continued trust in YourCompany means the world to us, especially during this festive season.',\n        closing: 'Wishing you warmth, laughter, and wonderful memories this Christmas! \ud83c\udf1f',\n        ps: 'P.S. We\\'ve added some exciting new features you might love!'\n      },\n      inactive: {\n        name: 'James',\n        subject: '\u2744\ufe0f We Miss You, James - Happy Holidays!',\n        greeting: 'Hello James,',\n        body: 'It\\'s been a while! We wanted to reach out during this special season to let you know we\\'ve been thinking about you.',\n        closing: 'Wishing you peace and joy this holiday season. We\\'d love to reconnect! \ud83c\udf84',\n        ps: 'P.S. A lot has changed - we\\'d love to show you what\\'s new!'\n      }\n    };\n\n    function updatePreview() {\n      const selected = document.getElementById('previewContact').value;\n      const data = previewData[selected];\n      \n      document.getElementById('previewSubject').textContent = data.subject;\n      document.getElementById('previewBody').innerHTML = `\n        <p style=\"margin-bottom: 10px;\"><strong>${data.greeting}</strong></p>\n        <p style=\"margin-bottom: 10px;\">${data.body}</p>\n        <p style=\"margin-bottom: 10px;\">${data.closing}</p>\n        <p style=\"margin-bottom: 0; font-size: 11px; color: #6b7280; font-style: italic;\">${data.ps}</p>\n      `;\n      \n      // Update stats based on selection\n      const nameTags = data.body.split(' ').length > 20 ? 7 : 5;\n      const variants = selected === 'vip' ? 4 : selected === 'inactive' ? 3 : 4;\n      \n      document.getElementById('previewNameCount').textContent = nameTags;\n      document.getElementById('previewVariants').textContent = variants;\n    }\n\n    // Initialize preview on load\n    updatePreview();\n  </script>\n</body>\n</html>\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        32,
+        256
+      ],
+      "id": "714f25e2-0df8-4c3a-ad30-a10445de7fc9",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "fromEmail": "your-email@example.com",
+        "toEmail": "={{ $json.email }}",
+        "subject": "check",
+        "html": "={{ $json.html_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        3216,
+        -64
+      ],
+      "id": "f3962151-5921-4559-9a4a-846c7fecfbea",
+      "name": "Send email",
+      "webhookId": "190284dd-1d22-4a4f-97b8-910de945bf4c",
+      "credentials": {
+        "smtp": {
+          "id": "YOUR_SMTP_CREDENTIAL_ID",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get contacts array from webhook body\nconst webhookData = $('Webhook').first().json.body;\nconst contacts = webhookData.contacts || [];\n\nif (contacts.length === 0) {\n  return [];\n}\n\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nconst seen = new Set();\nconst out = [];\n\nfor (const contact of contacts) {\n  const email = (contact.email || '').toLowerCase().trim();\n  \n  // Skip invalid or missing emails\n  if (!email || !emailRegex.test(email)) {\n    console.log('Skipped invalid email:', contact.email);\n    continue;\n  }\n  \n  // Skip duplicates\n  if (seen.has(email)) {\n    console.log('Skipped duplicate email:', email);\n    continue;\n  }\n  \n  seen.add(email);\n  \n  out.push({\n    json: {\n      name: contact.name || 'Friend',\n      email: email,\n      company: contact.company || 'N/A',\n      purchase_history: contact.purchase_history || 'New customer',\n      source: 'csv'\n    }\n  });\n}\n\nconsole.log(`Processed ${out.length} unique contacts from CSV`);\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        64
+      ],
+      "id": "c96b84ff-c852-4ce8-bfa0-f445b8da67b5",
+      "name": "csv parse"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nif (rows.length === 0) return [];\n\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nconst seen = new Set();\nconst out = [];\n\nfor (const row of rows) {\n  const emailRaw = row.Email || row.email || '';\n  const email = emailRaw.toLowerCase().trim();\n\n  if (!email || !emailRegex.test(email)) continue;     // skip missing/invalid\n  if (seen.has(email)) continue;                      // skip duplicates\n  seen.add(email);\n\n  const name = row.Name || row.name || 'Friend';\n  const company = row.Company || row.company || 'N/A';\n  const history = row.purchase_history || row.Purchases || '';\n\n  out.push({\n    json: {\n      name,\n      email,\n      company,\n      purchase_history: history || 'New customer',\n      source: 'sheets',\n      row_number: row.row_number        // keep for updates later\n    }\n  });\n}\n\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -192
+      ],
+      "id": "56abb2c2-faa3-497a-b6eb-d4de4683b11f",
+      "name": "sheets parsing"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bb053bb1-413b-4373-9ae0-8c9d523c3276",
+              "leftValue": "={{ $('Webhook').first().json.body.scheduleTime }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        -32
+      ],
+      "id": "e2a1c15b-749e-4751-bcbd-05ffa5c42d50",
+      "name": "schedule time check"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.toolhouse.ai/v1/agent-runs/{{ $('Generate Personalized Email - Toolhouse').item.json.data.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_TOOLHOUSE_API_KEY"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        -32
+      ],
+      "id": "ce033972-8c94-4476-abce-dbde576c6621",
+      "name": "toolhouse update"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Toolhouse response from previous HTTP node\nconst toolhouseData = $input.first().json.data;\n\n// Prefer the assistant message content; fall back to last_agent_message\nlet rawText = '';\n\ntry {\n  const assistantMsg = (toolhouseData.results || []).find(r => r.role === 'assistant');\n  rawText = assistantMsg?.content?.[0]?.text || toolhouseData.last_agent_message || '';\n} catch (e) {\n  rawText = toolhouseData.last_agent_message || '';\n}\n\n// Parse the JSON blob ({ \"subject\": \"...\", \"html_body\": \"...\" })\nlet parsed = {};\ntry {\n  parsed = JSON.parse(rawText);\n} catch (e) {\n  parsed = {\n    subject: 'Holiday greetings from YourCompany',\n    html_body: rawText || '<p>Warm holiday wishes from YourCompany.</p>',\n  };\n}\n\n// Get current contact from Loop Over Items\nconst contact = $('Loop Over Items').item.json;\n\n// Optional: simple fallback if agent forgot to personalize name\nlet body = parsed.html_body || '';\nif (contact.name) {\n  body = body.replace(/\\[\\s*name\\s*\\]/gi, contact.name);\n}\n\n// Return a single item with everything the email node needs\nreturn [\n  {\n    json: {\n      // contact data\n      name: contact.name,\n      email: contact.email,\n      company: contact.company,\n      purchase_history: contact.purchase_history,\n      source: contact.source,\n      row_number: contact.row_number,\n\n      // Toolhouse-generated content\n      subject: parsed.subject || 'Holiday greetings from YourCompany',\n      html_body: body\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        -32
+      ],
+      "id": "8b8caf37-cc8b-4fde-a418-9426448845b4",
+      "name": "email parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7ecad00e-fff4-4e9d-bd55-0d02da60d844",
+              "leftValue": "={{ $json.data.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2592,
+        -32
+      ],
+      "id": "7d9087a1-8999-4871-9ed4-b85770201d59",
+      "name": "check toolhouse status"
+    },
+    {
+      "parameters": {
+        "content": "## Website setup\n",
+        "height": 240,
+        "width": 464
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -208,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "52718a38-d1a7-412b-89a4-a575c181122b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2800,
+        64
+      ],
+      "id": "c7cb41aa-5bba-47c6-adb0-760feef50509",
+      "name": "Wait2",
+      "webhookId": "e17fa4c4-ac4d-4bac-8753-63944637d096"
+    }
+  ],
+  "connections": {
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "csv parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "sheets parsing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "schedule time check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Generate Personalized Email - Toolhouse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "toolhouse update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Personalized Email - Toolhouse": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "csv parse": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "sheets parsing": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "schedule time check": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "toolhouse update": {
+      "main": [
+        [
+          {
+            "node": "check toolhouse status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "email parser": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check toolhouse status": {
+      "main": [
+        [
+          {
+            "node": "email parser",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "toolhouse update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "01f75359-7f06-4e05-b94c-be223d4ca4a8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_INSTANCE_ID"
+  },
+  "id": "TPQbFxiZpBDHymD7",
+  "tags": []
+}
